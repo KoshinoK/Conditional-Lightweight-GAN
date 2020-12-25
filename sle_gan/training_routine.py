@@ -9,7 +9,7 @@ import sle_gan
 # 条件ベクトルをimagesの後の引数で受け取る
 @tf.function
 def train_step(G, D, G_optimizer, D_optimizer, images, conditional_vectors, diff_augmenter_policies: str = None) -> tuple:
-    batch_size = tf.shape(images)[0]
+    batch_size = images.shape[0]
 
     # Images for the I_{part} reconstruction loss
     images_batch_center_crop_128 = sle_gan.center_crop_images(images, 128)
@@ -22,7 +22,7 @@ def train_step(G, D, G_optimizer, D_optimizer, images, conditional_vectors, diff
         create_input_noise data.pyで定義。条件ベクトルを付加するように修正する。
         sle_gan.create_latent_vectors(batch_size, conditional_vectors)へ変更。
         """
-        noise_input = sle_gan.create_latent_vectors(batch_size, conditional_vectors)
+        noise_input = sle_gan.data.create_latent_vectors(batch_size, conditional_vectors)
         
         generated_images = G(noise_input, training=True)
 
@@ -31,7 +31,7 @@ def train_step(G, D, G_optimizer, D_optimizer, images, conditional_vectors, diff
             -> diff_augmentの修正ではなく、この箇所で条件画像を付加する。
         """
         aug_real_images = sle_gan.diff_augment(images, policy=diff_augmenter_policies)
-        dis_real_inputs = create_discriminator_inputs(aug_real_images, conditional_vectors)
+        dis_real_inputs = sle_gan.data.create_discriminator_inputs(aug_real_images, conditional_vectors)
         real_fake_output_logits_on_real_images, decoded_real_image, decoded_real_image_central_crop = D(
             dis_real_inputs, training=True)
         """
@@ -39,7 +39,7 @@ def train_step(G, D, G_optimizer, D_optimizer, images, conditional_vectors, diff
             -> diff_augmentの修正ではなく、この箇所で条件画像を付加する。
         """
         aug_fake_images = sle_gan.diff_augment(generated_images, policy=diff_augmenter_policies)
-        dis_fake_inputs = create_discriminator_inputs(aug_fake_images, conditional_vectors)
+        dis_fake_inputs = sle_gan.data.create_discriminator_inputs(aug_fake_images, conditional_vectors)
         real_fake_output_logits_on_fake_images, _, _ = D(
             dis_fake_inputs, training=True)
 
@@ -105,7 +105,7 @@ def evaluation_step(inception_model:tf.keras.models.Model,
         sle_gan.create_latent_vectors(batch_size, conditional_vectors)へ変更。
             -> 変更済み
         """
-        input_noise = sle_gan.create_latent_vectors(batch_size, conditional_vectors[i])
+        input_noise = sle_gan.data.create_latent_vectors(batch_size, conditional_vectors[i])
         fake_images = G(input_noise)
         fake_images = sle_gan.postprocess_images(fake_images, dtype=tf.uint8).numpy()
         _, fake_images_file_paths = sle_gan.write_images_to_disk(fake_images, folder=None)

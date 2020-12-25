@@ -17,9 +17,11 @@ def create_latent_vectors(batch_size: int, conditional_vectors):
     Returns
         latent_vectors: (B, 1, 1, 256 + NUM_CLASSES)
     """
-    noise = np.random.randn(batch_size, 256)
-    
-    return np.concatenate([noise, conditional_vectors], axis=1)
+    noise = np.random.randn(batch_size, 256).astype('float32')
+#     print('type of noise = ', type(noise))
+#     print('type of conditional_vectors = ', type(conditional_vectors))    
+    return tf.concat([noise, conditional_vectors], axis=1)
+#     return np.concatenate([noise, conditional_vectors], axis=1)
 
 def create_discriminator_inputs(images, conditional_vectors):
     """
@@ -37,10 +39,20 @@ def create_discriminator_inputs(images, conditional_vectors):
         A: 画像の成分数。images.shape[3]
         C: 条件ベクトルの次元
     """
+    
+    # eagerモードにしておかないと、tensor.numpy()やスライスが使用困難
+    tf.config.experimental_run_functions_eagerly(True)
+    
     conditional_images = np.zeros((images.shape[0], images.shape[1], images.shape[2], conditional_vectors.shape[-1]),
                                     dtype='float32')
-    conditional_images[:, ] = conditional_vectors.reshape((images.shape[0], 1, 1, conditional_vectors.shape[-1]))
-    return np.concatenate([images, conditional_images], axis=-1)
+        
+    if tf.is_tensor(conditional_vectors):
+        conditional_vectors = conditional_vectors.numpy()
+        conditional_images[:, ] = conditional_vectors.reshape((images.shape[0], 1, 1, conditional_vectors.shape[-1]))
+    else:
+        conditional_images[:, ] = conditional_vectors.reshape((images.shape[0], 1, 1, conditional_vectors.shape[-1]))
+    return tf.concat([images, conditional_images], axis=-1)
+#     return np.concatenate([images, conditional_images], axis=-1)
     
 def read_image_from_path(image_path):
     image = tf.io.read_file(image_path)
@@ -123,11 +135,11 @@ def get_test_images(batch_size: int, folder: str, resolution: int):
     for x in dataset.take(1):
         return x
 
-def get_discriminator_input(image_seq, batch_size, index):
-    images, conditional_vectors = image_seq.__getitem__(index)
-    num_classes = conditional_vectors.shape[-1]
-    conditional_images = np.zeros((batch_size, input_resolution, input_resolution, 
-                                    conditional_vectors.shape[-1]), dtype='float32')
-    conditional_images[:, ] = conditional_vectors.reshape(batch_size, 1, 1, num_classes)
-    return np.concatenate([images, conditional_images], axis=-1)
+# def get_discriminator_input(image_seq, batch_size, index):
+#     images, conditional_vectors = image_seq.__getitem__(index)
+#     num_classes = conditional_vectors.shape[-1]
+#     conditional_images = np.zeros((batch_size, input_resolution, input_resolution, 
+#                                     conditional_vectors.shape[-1]), dtype='float32')
+#     conditional_images[:, ] = conditional_vectors.reshape(batch_size, 1, 1, num_classes)
+#     return np.concatenate([images, conditional_images], axis=-1)
 
