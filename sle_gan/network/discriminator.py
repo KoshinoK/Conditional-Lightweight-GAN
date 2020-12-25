@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+import sle_gan
 from sle_gan import center_crop_images
 from sle_gan.network.common_layers import GLU
 
@@ -161,10 +162,10 @@ class Discriminator(tf.keras.models.Model):
     条件ベクトルを付加するように修正
         修正済み
     """
-    def initialize(self, batch_size: int = 1, conditional_vectors):
+    def initialize(self, batch_size, conditional_vectors):
         sample_input = tf.random.uniform(shape=(batch_size, self.input_resolution, self.input_resolution, 3), minval=0,
                                          maxval=1, dtype=tf.float32)
-        sample_output = self.call(sle_gan.create_discriminator_inputs(sample_input, conditional_vectors))
+        sample_output = self.call(sle_gan.data.create_discriminator_inputs(sample_input, conditional_vectors))
         return sample_output
 
     @tf.function

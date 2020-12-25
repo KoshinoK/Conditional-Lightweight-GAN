@@ -1,6 +1,7 @@
 import tensorflow as tf
 import tensorflow_addons as tfa
 
+import sle_gan
 from sle_gan.network.common_layers import GLU
 
 
@@ -111,10 +112,10 @@ class Generator(tf.keras.models.Model):
         
         # inputs = ノイズベクトル + 条件ベクトル(batch_size, 1次元配列)で受け取る。サイズが256ではなくなるので、
         # ユニット数256のDenseを入れる
-        self.input_dense = keras.layers.Dense(units=256)
+        self.input_dense = tf.keras.layers.Dense(units=256)
         
         # 後段のInputBlock(Conv2DTransposeを使用)へ入力するために形状を変える
-        self.reshape = keras.layers.Reshape((1, 1, 256))
+        self.reshape = tf.keras.layers.Reshape((1, 1, 256))
         # self.reshape = keras.layers.Reshape((1, 1, 256 + num_classes))
         
         self.input_block = InputBlock(filters=1024)
@@ -139,8 +140,8 @@ class Generator(tf.keras.models.Model):
     条件ベクトルを付加するように修正。
         -> 修正済み
     """
-    def initialize(self, batch_size: int = 1, conditional_vectors):
-        sample_input = sle_gan.create_latent_vectors(batch_size, conditional_vectors)
+    def initialize(self, batch_size, conditional_vectors):
+        sample_input = sle_gan.data.create_latent_vectors(batch_size, conditional_vectors)
         sample_output = self.call(sample_input)
         return sample_output
 
